@@ -1,0 +1,55 @@
+name: Build Windows EXE
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/build-exe.yml"
+      - "main.py"
+      - "video_trimmer.py"
+      - "ui/**"
+      - "requirements.txt"
+      - "VideoTrimmer.spec"
+      - "video_trimmer.spec"
+
+permissions:
+  contents: read
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt pyinstaller
+
+      - name: Install FFmpeg for packaging
+        shell: pwsh
+        run: |
+          choco install ffmpeg --yes --no-progress
+          $ffmpeg = (Get-Command ffmpeg).Source
+          Copy-Item $ffmpeg -Destination ffmpeg.exe -Force
+          Get-Item .\ffmpeg.exe | Format-List FullName, Length
+
+      - name: Build EXE with PyInstaller
+        run: pyinstaller VideoTrimmer.spec --noconfirm
+
+      - name: Upload Windows EXE artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: VideoTrimmer-windows-exe
+          path: dist/VideoTrimmer.exe
+          if-no-files-found: error

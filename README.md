@@ -72,6 +72,16 @@ python main.py
 5. **开始剪辑**：点击"开始剪辑"按钮开始处理
 6. **等待完成**：程序会显示处理进度，完成后会提示成功
 
+## GitHub 自动打包
+
+仓库已经可以通过 GitHub Actions 自动打包 Windows `exe`：
+
+1. 推送代码到 `main` 分支，或在 GitHub 的 `Actions` 页面手动运行 `Build Windows EXE`
+2. 工作流会在 `windows-latest` 上安装 Python 依赖、下载 FFmpeg，并执行 `PyInstaller`
+3. 打包完成后，可在对应工作流页面下载 `VideoTrimmer-windows-exe` artifact
+
+当前自动打包使用的是 [VideoTrimmer.spec](VideoTrimmer.spec)，产物文件名为 `dist/VideoTrimmer.exe`
+
 ### 注意事项
 
 - 移除时间不能大于等于视频总时长
