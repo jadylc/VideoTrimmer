@@ -13,9 +13,12 @@ on:
       - "requirements.txt"
       - "VideoTrimmer.spec"
       - "video_trimmer.spec"
+  release:
+    types:
+      - published
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   build-windows:
@@ -53,3 +56,11 @@ jobs:
           name: VideoTrimmer-windows-exe
           path: dist/VideoTrimmer.exe
           if-no-files-found: error
+
+      - name: Upload EXE to GitHub Release
+        if: github.event_name == 'release'
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: gh release upload "$env:RELEASE_TAG" dist/VideoTrimmer.exe --clobber
