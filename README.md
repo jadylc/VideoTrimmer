@@ -79,7 +79,8 @@ python main.py
 1. 推送代码到 `main` 分支，或在 GitHub 的 `Actions` 页面手动运行 `Build Windows EXE`
 2. 工作流会在 `windows-latest` 上安装 Python 依赖、下载 FFmpeg，并执行 `PyInstaller`
 3. 如果是普通推送或手动运行，打包完成后可在对应工作流页面下载 `VideoTrimmer-windows-exe` artifact
-4. 如果是在 GitHub 上发布 Release，工作流会在构建完成后把 `VideoTrimmer.exe` 自动上传到该 Release 的 Assets 中
+4. 如果推送的是形如 `v1.0.1` 的标签，工作流会自动创建或更新对应的 GitHub Release，并把 `VideoTrimmer.exe` 上传到该 Release 的 Assets 中
+5. 如果是在 GitHub 上手动发布某个已存在标签的 Release，工作流也会在构建完成后把 `VideoTrimmer.exe` 上传到该 Release 的 Assets 中
 
 当前自动打包使用的是 [VideoTrimmer.spec](VideoTrimmer.spec)，产物文件名为 `dist/VideoTrimmer.exe`
 
