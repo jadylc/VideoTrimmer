@@ -47,14 +47,14 @@ class VideoTrimmer:
 
             ffmpeg_exe = os.path.join(base_path, 'ffmpeg.exe')
             log(f"检查路径1: {ffmpeg_exe}, 存在: {os.path.exists(ffmpeg_exe)}")
-            if os.path.exists(ffmpeg_exe):
+            if os.path.exists(ffmpeg_exe) and self._is_ffmpeg_working(ffmpeg_exe):
                 log(f"找到FFmpeg: {ffmpeg_exe}")
                 return ffmpeg_exe
 
             # 也可能在临时目录
             ffmpeg_exe = os.path.join(os.path.dirname(sys.executable), 'ffmpeg.exe')
             log(f"检查路径2: {ffmpeg_exe}, 存在: {os.path.exists(ffmpeg_exe)}")
-            if os.path.exists(ffmpeg_exe):
+            if os.path.exists(ffmpeg_exe) and self._is_ffmpeg_working(ffmpeg_exe):
                 log(f"找到FFmpeg: {ffmpeg_exe}")
                 return ffmpeg_exe
 
@@ -64,28 +64,59 @@ class VideoTrimmer:
 
         ffmpeg_exe = current_dir / 'ffmpeg.exe'
         log(f"检查路径3: {ffmpeg_exe}, 存在: {ffmpeg_exe.exists()}")
-        if ffmpeg_exe.exists():
+        if ffmpeg_exe.exists() and self._is_ffmpeg_working(str(ffmpeg_exe)):
             log(f"找到FFmpeg: {ffmpeg_exe}")
             return str(ffmpeg_exe)
 
         # 检查系统PATH
         log("检查系统PATH...")
-        try:
-            result = subprocess.run(
-                ['ffmpeg', '-version'],
-                capture_output=True,
-                text=True,
-                timeout=5
-            )
-            if result.returncode == 0:
-                log("在系统PATH中找到FFmpeg")
-                return 'ffmpeg'
-        except FileNotFoundError:
-            log("系统PATH中未找到FFmpeg")
+        if self._is_ffmpeg_working('ffmpeg'):
+            log("在系统PATH中找到FFmpeg")
+            return 'ffmpeg'
+
+        log("系统PATH中未找到可用的FFmpeg")
 
         log("未找到FFmpeg!")
         log("=" * 50)
         return None
+
+    def _is_ffmpeg_working(self, candidate):
+        """校验候选FFmpeg是否是真正可执行的二进制文件。"""
+        log(f"校验FFmpeg候选: {candidate}")
+
+        try:
+            startupinfo = None
+            if os.name == 'nt':
+                startupinfo = subprocess.STARTUPINFO()
+                startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+                startupinfo.wShowWindow = subprocess.SW_HIDE
+
+            result = subprocess.run(
+                [candidate, '-version'],
+                capture_output=True,
+                text=False,
+                timeout=5,
+                startupinfo=startupinfo
+            )
+        except FileNotFoundError:
+            log(f"候选不存在或不可执行: {candidate}")
+            return False
+        except Exception as exc:
+            log(f"校验FFmpeg失败: {candidate}, 异常: {exc}")
+            return False
+
+        output = self._decode_output(result.stdout)
+        if not output:
+            output = self._decode_output(result.stderr)
+
+        log(f"FFmpeg候选返回码: {result.returncode}")
+        if output:
+            log(f"FFmpeg候选输出: {output[:300]}")
+
+        if result.returncode != 0:
+            return False
+
+        return 'ffmpeg version' in output.lower()
 
     def _decode_output(self, output):
         """解码FFmpeg输出，兼容中文路径和不同终端编码。"""

@@ -45,7 +45,14 @@ jobs:
         shell: pwsh
         run: |
           choco install ffmpeg --yes --no-progress
-          $ffmpeg = (Get-Command ffmpeg).Source
+          $ffmpegCandidates = @(
+            (Join-Path $env:ChocolateyInstall 'lib\ffmpeg\tools\ffmpeg\bin\ffmpeg.exe'),
+            (Join-Path $env:ProgramData 'chocolatey\lib\ffmpeg\tools\ffmpeg\bin\ffmpeg.exe')
+          ) | Where-Object { $_ -and (Test-Path $_) }
+          if (-not $ffmpegCandidates) {
+            throw 'Unable to locate the real ffmpeg.exe after Chocolatey install.'
+          }
+          $ffmpeg = $ffmpegCandidates[0]
           Copy-Item $ffmpeg -Destination ffmpeg.exe -Force
           Get-Item .\ffmpeg.exe | Format-List FullName, Length
 
